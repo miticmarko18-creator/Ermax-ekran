@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ERMAX DISPLAY</title>
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f4f7fb;
+color:#123456;
+}
+.header{
+background:#1e3a5f;
+color:white;
+padding:20px;
+text-align:center;
+font-size:42px;
+font-weight:bold;
+letter-spacing:4px;
+}
+.clockbox{
+text-align:center;
+padding:30px 10px;
+}
+#clock{
+font-size:110px;
+font-weight:bold;
+}
+#date{
+font-size:32px;
+margin-top:10px;
+}
+.cards{
+width:95%;
+margin:auto;
+}
+.card{
+background:white;
+margin:18px 0;
+padding:20px;
+border-radius:16px;
+border-left:10px solid #1e3a5f;
+box-shadow:0 3px 10px rgba(0,0,0,0.12);
+}
+.label{
+font-size:24px;
+color:#666;
+}
+.value{
+font-size:48px;
+font-weight:bold;
+margin-top:8px;
+}
+.footer{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#1e3a5f;
+color:white;
+text-align:center;
+padding:10px;
+font-size:22px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">ERMAX</div>
+
+<div class="clockbox">
+<div id="clock">00:00:00</div>
+<div id="date"></div>
+</div>
+
+<div class="cards">
+<div class="card">
+<div class="label">SMENA</div>
+<div class="value" id="shift"></div>
+</div>
+
+<div class="card">
+<div class="label">KALENDARSKA NEDELJA</div>
+<div class="value" id="week"></div>
+</div>
+</div>
+
+<div class="footer">PROIZVODNI INFORMACIONI EKRAN</div>
+
+<script>
+function weekNumber(d){
+var date=new Date(d.getTime());
+date.setDate(date.getDate()+4-(date.getDay()||7));
+var yearStart=new Date(date.getFullYear(),0,1);
+return Math.ceil((((date-yearStart)/86400000)+1)/7);
+}
+
+function update(){
+var now=new Date();
+
+var h=now.getHours();
+var m=now.getMinutes();
+var s=now.getSeconds();
+
+if(h<10)h="0"+h;
+if(m<10)m="0"+m;
+if(s<10)s="0"+s;
+
+document.getElementById("clock").innerHTML=h+":"+m+":"+s;
+document.getElementById("date").innerHTML=now.toLocaleDateString();
+
+var smena="III SMENA";
+if(now.getHours()>=6 && now.getHours()<14) smena="I SMENA";
+else if(now.getHours()>=14 && now.getHours()<22) smena="II SMENA";
+
+document.getElementById("shift").innerHTML=smena;
+document.getElementById("week").innerHTML="KN "+weekNumber(now);
+}
+update();
+setInterval(update,1000);
+</script>
+
+</body>
+</html>
