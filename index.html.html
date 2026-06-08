@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERMAX Production Display</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+height:100vh;
+font-family:'Segoe UI',Arial,sans-serif;
+background:linear-gradient(135deg,#eef4ff,#dce9ff);
+display:flex;
+align-items:center;
+justify-content:center;
+color:#1f2937;
+}
+.dashboard{
+width:95%;
+height:92%;
+background:white;
+border-radius:30px;
+box-shadow:0 20px 60px rgba(0,0,0,.15);
+padding:40px;
+display:grid;
+grid-template-rows:auto 1fr auto;
+}
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:3px solid #e5e7eb;
+padding-bottom:20px;
+}
+.logo{
+font-size:2.5rem;
+font-weight:800;
+letter-spacing:3px;
+color:#0f4c81;
+}
+.status{
+font-size:1.2rem;
+font-weight:600;
+}
+.center{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+#clock{
+font-size:9rem;
+font-weight:800;
+color:#0f172a;
+}
+#date{
+font-size:2rem;
+margin-top:10px;
+color:#475569;
+}
+.footer{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:25px;
+}
+.card{
+background:#f8fafc;
+border-left:8px solid #0f4c81;
+border-radius:20px;
+padding:25px;
+text-align:center;
+}
+.label{
+font-size:1rem;
+color:#64748b;
+margin-bottom:8px;
+text-transform:uppercase;
+}
+.value{
+font-size:2.2rem;
+font-weight:700;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+<div class="header">
+<div class="logo">ERMAX</div>
+<div class="status">PROIZVODNI INFORMACIONI EKRAN</div>
+</div>
+
+<div class="center">
+<div id="clock">00:00:00</div>
+<div id="date"></div>
+</div>
+
+<div class="footer">
+<div class="card">
+<div class="label">Trenutna smena</div>
+<div class="value" id="shift"></div>
+</div>
+
+<div class="card">
+<div class="label">Kalendarska nedelja</div>
+<div class="value" id="week"></div>
+</div>
+
+<div class="card">
+<div class="label">Temperatura</div>
+<div class="value" id="temp">-- °C</div>
+</div>
+</div>
+</div>
+
+<script>
+function getWeek(date){
+const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));
+const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+return Math.ceil((((d-yearStart)/86400000)+1)/7);
+}
+
+function getShift(h){
+if(h>=6&&h<14) return "I SMENA";
+if(h>=14&&h<22) return "II SMENA";
+return "III SMENA";
+}
+
+function updateClock(){
+const now=new Date();
+document.getElementById("clock").innerText=now.toLocaleTimeString("sr-RS");
+document.getElementById("date").innerText=now.toLocaleDateString("sr-RS",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+document.getElementById("shift").innerText=getShift(now.getHours());
+document.getElementById("week").innerText="KN "+getWeek(now);
+}
+updateClock();
+setInterval(updateClock,1000);
+
+async function loadTemp(){
+try{
+const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=42.97&longitude=22.12&current=temperature_2m");
+const d=await r.json();
+document.getElementById("temp").innerText=d.current.temperature_2m+" °C";
+}catch(e){}
+}
+loadTemp();
+setInterval(loadTemp,600000);
+</script>
+</body>
+</html>
