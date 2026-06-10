@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<title>ERMAX Production Control</title>
+<style>
+body{font-family:'Segoe UI',Arial;background:linear-gradient(135deg,#eaf2ff,#d9e7fb,#eef5ff);margin:20px;color:#1b2838}
+.header{display:flex;justify-content:space-between;align-items:flex-start}
+.panel{background:rgba(255,255,255,.96);padding:18px;border-radius:22px;box-shadow:0 18px 40px rgba(31,78,120,.12);margin-bottom:14px;border:1px solid #e8eef7;backdrop-filter:blur(8px)}
+h1{margin:0}
+.topinfo{text-align:right;font-weight:bold}
+button,input,select{padding:8px}
+table{width:100%;border-collapse:separate;border-spacing:0;background:white;border-radius:16px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.08)}
+th,td{border:1px solid #dde6f2;padding:10px}
+th{background:linear-gradient(90deg,#022b63,#083f8c);color:white;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:12px}
+.row-active td{background:#fff6a8}
+.row-progress td{background:#cfe8ff !important}
+.row-done td{background:#d8f5d1 !important}
+.row-stop td{background:#ffd0d0 !important}
+.row-mold td{background:#e6d5ff !important}
+.tab{display:inline-block;padding:12px 18px;margin:4px;border-radius:12px;background:#eef4ff;cursor:pointer;font-weight:600;border:1px solid #d7e3f7;transition:.2s}
+.activeTab{background:linear-gradient(135deg,#1f4e78,#2d6ca3);color:white;box-shadow:0 6px 16px rgba(31,78,120,.35);transform:translateY(-1px)}
+.kpi{display:inline-block;margin-right:20px;font-weight:bold;background:white;padding:12px 18px;border-radius:14px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.search-hit td{background:#ffd54f !important;border-top:2px solid #ff9800;border-bottom:2px solid #ff9800;animation:pulse 1.2s infinite alternate}
+@keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.08)}}
+.digital{font-family:Consolas,monospace;background:linear-gradient(180deg,#0f172a,#111827);color:#00ff88;padding:14px 18px;border-radius:14px;line-height:1.5;text-align:center;min-width:260px;box-shadow:inset 0 0 20px rgba(0,255,136,.15),0 8px 20px rgba(0,0,0,.25)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style id="modern-upgrade">
+body{
+ background:linear-gradient(135deg,#eef4ff,#f8fbff)!important;
+}
+.panel{
+ border-radius:28px!important;
+ box-shadow:0 15px 40px rgba(15,23,42,.08)!important;
+}
+button{
+ background:#fff!important;
+ border:1px solid #dbe7f5!important;
+ border-radius:14px!important;
+ padding:10px 14px!important;
+ font-weight:600;
+ transition:.2s;
+}
+button:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.08)}
+input,select{
+ border:1px solid #dbe7f5!important;
+ border-radius:12px!important;
+ background:#fff;
+}
+table{
+ border-radius:22px!important;
+ overflow:hidden;
+}
+th{
+ background:linear-gradient(90deg,#0f2f6b,#1d4f9a)!important;
+}
+.kpi{
+ border-radius:18px!important;
+ background:linear-gradient(135deg,#fff,#f7faff)!important;
+}
+</style>
+<style id="ultra-modern-ui">
+:root{
+--bg:#f4f7fb;
+--card:rgba(255,255,255,.75);
+--border:#dbe7f5;
+--primary:#1f4e78;
+--shadow:0 20px 40px rgba(15,23,42,.08);
+}
+body{
+background:
+radial-gradient(circle at top left,#dbeafe,transparent 35%),
+radial-gradient(circle at top right,#e9d5ff,transparent 35%),
+linear-gradient(135deg,#f5f9ff,#eef4ff)!important;
+font-family:'Segoe UI',sans-serif!important;
+}
+.panel{
+background:var(--card)!important;
+backdrop-filter:blur(18px)!important;
+border:1px solid rgba(255,255,255,.7)!important;
+border-radius:28px!important;
+box-shadow:var(--shadow)!important;
+}
+button{
+background:linear-gradient(135deg,#ffffff,#f3f7fc)!important;
+border:1px solid var(--border)!important;
+border-radius:16px!important;
+font-weight:700!important;
+}
+button:hover{
+transform:translateY(-3px) scale(1.02);
+}
+.kpi{
+min-width:180px;
+padding:18px 22px!important;
+font-size:18px;
+}
+table{
+overflow:hidden;
+border-radius:24px!important;
+}
+th{
+position:sticky;
+top:0;
+background:linear-gradient(90deg,#163d75,#2b6cb0)!important;
+}
+td{
+transition:.2s;
+}
+tr:hover td{
+background:#f8fbff;
+}
+input,select{
+padding:10px!important;
+border-radius:14px!important;
+}
+.digital{
+border-radius:22px!important;
+background:linear-gradient(180deg,#0f172a,#111827)!important;
+}
+.search-hit td{
+background:#ffd54f!important;
+font-weight:700;
+box-shadow:inset 0 0 0 2px #ff9800;
+}
+.tab{
+border-radius:16px!important;
+padding:12px 20px!important;
+}
+.activeTab{
+background:linear-gradient(135deg,#2563eb,#1e40af)!important;
+}
+</style>
+
+</head>
+<body>
+
+<div class="panel">
+<div class="header">
+<div>
+<h1>ERMAX Production Control</h1><div style='font-size:12px;color:#6b7280;margin-top:4px'>Production Monitoring & Planning System</div>
+<div id="tabs" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px"></div>
+</div>
+<div class="topinfo digital">
+<div style="font-size:22px;font-weight:bold;" id="currentKN"></div>
+<div style="font-size:15px;" id="dateOnly"></div>
+<div style="font-size:24px;font-weight:bold;" id="clock"></div>
+<div style="font-size:16px;" id="shift"></div>
+</div>
+</div>
+
+<br>
+<button onclick="newKN()">➕ Novi KN</button><button onclick="document.documentElement.requestFullscreen?.()">⛶ Full Screen</button>
+<button onclick="exportExcel()">⬇ Excel</button><span id="excelAdminTools" style="display:none"><button onclick="document.getElementById('xlsxFile').click()">⬆ Uvoz</button></span><input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"><button onclick="undo()">⟲ Undo</button><button onclick="redo()">⟳ Redo</button>
+
+
+<select id="role" onchange="draw()"><option>Tim lider</option></select> <button onclick="adminLogin()">⚡ Admin</button><span id="adminTools" style="display:none"><button onclick="refreshSettings()">↻ Refresh</button> <button onclick="changePassword()">⚙ Šifra</button> <button onclick="logoutAdmin()">⇥ Odjava</button></span>
+
+<input id="search" placeholder="Pretraga proizvoda" onkeyup="draw()"><span id="searchCount" style="margin-left:10px;font-weight:bold"></span>
+</div>
+
+<div class="panel"><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap'><div style='font-size:13px'><b>Status:</b> 🔵 U obradi &nbsp; 🟩 Završen &nbsp; 🔴 Ne isporučujemo &nbsp; 🟣 Mold</div><div style='font-size:13px;color:#64748b'></div></div>
+<span class="kpi" id="k1"></span>
+<span class="kpi" id="k2"></span>
+<span class="kpi" id="k3"></span>
+</div>
+
+<div id="grid"></div>
+
+<script>
+let db=JSON.parse(localStorage.getItem("ERMAXPRO")||'{"KN24":[]}');
+let current=Object.keys(db)[0];
+
+
+
+function refreshSettings(){
+ let choice=prompt('Refresh: 0=Isključen, 15=15 min, 30=30 min, 60=1 sat', localStorage.getItem('refreshMin')||'30');
+ if(choice!==null){ localStorage.setItem('refreshMin',choice); alert('Sačuvano.'); }
+}
+
+function changePassword(){
+ let oldPass=prompt('Unesite trenutnu šifru:');
+ let currentPass=localStorage.getItem('adminPass')||'Mitic123';
+ if(oldPass!==currentPass){ alert('Pogrešna šifra.'); return; }
+ let newPass=prompt('Nova šifra:');
+ if(newPass && newPass.length>=4){
+   localStorage.setItem('adminPass',newPass);
+   alert('Šifra promenjena.');
+ }
+}
+
+function logoutAdmin(){
+ isAdmin=false;
+ document.getElementById('role').innerHTML='<option>Tim lider</option>';
+ document.getElementById('adminTools').style.display='none'; document.getElementById('excelAdminTools').style.display='none';
+ draw();
+}
+
+
+let isAdmin=false;
+function adminLogin(){
+ const pass=prompt('Unesite administratorsku šifru:');
+ if(pass===(localStorage.getItem('adminPass')||'Mitic123')){
+   isAdmin=true;
+   document.getElementById('role').innerHTML='<option>⚡ Admin</option><option>Tim lider</option>';
+   document.getElementById('role').value='⚡ Admin';
+   document.getElementById('adminTools').style.display='inline'; document.getElementById('excelAdminTools').style.display='inline'; alert('Uspešna prijava.');
+   draw();
+ }else{
+   alert('Pogrešna šifra!');
+ }
+}
+ let undoStack=[]; let redoStack=[];
+
+function save(){
+undoStack.push(JSON.stringify(db));
+if(undoStack.length>50) undoStack.shift();
+localStorage.setItem("ERMAXPRO",JSON.stringify(db));
+}
+function undo(){
+if(!undoStack.length) return;
+redoStack.push(JSON.stringify(db));
+db=JSON.parse(undoStack.pop());
+localStorage.setItem("ERMAXPRO",JSON.stringify(db));draw();
+}
+function redo(){
+if(!redoStack.length) return;
+undoStack.push(JSON.stringify(db));
+db=JSON.parse(redoStack.pop());
+localStorage.setItem("ERMAXPRO",JSON.stringify(db));draw();
+}
+function newKN(){let n=prompt("Naziv KN");if(n){db[n]=[];current=n;save();draw();}}
+function drawTabs(){
+let h='';
+Object.keys(db).sort((a,b)=>parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,''))).forEach(t=>h+=`<span class="tab ${t==current?'activeTab':''}" onclick="current='${t}';draw()">${t}</span>`);
+document.getElementById("tabs").innerHTML=h;
+document.getElementById("currentKN").innerText=current;
+}
+function addRow(){db[current].push({status:''});save();draw();}
+function upd(i,f,v){db[current][i][f]=v;save();draw();}
+function delRow(i){db[current].splice(i,1);save();draw();}
+
+
+function importExcel(e){
+ if(document.getElementById('role').value!=='Admin'){
+   alert('Samo Admin može da uvozi Excel fajlove.');
+   return;
+ }
+ const file=e.target.files[0];
+ if(!file) return;
+
+ const reader=new FileReader();
+ reader.onload=function(ev){
+   const data=new Uint8Array(ev.target.result);
+   const wb=XLSX.read(data,{type:'array'});
+   const ws=wb.Sheets[wb.SheetNames[0]];
+   const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+
+   for(let i=1;i<rows.length;i++){
+      const r=rows[i];
+      if(!r || !r[1]) continue;
+
+      db[current].push({
+        datum:r[0]||'',
+        proizvod:r[1]||'',
+        plan:r[2]||0,
+        done:r[3]||0,
+        status:r[4]||'',
+        komentar:r[5]||''
+      });
+   }
+
+   save();
+   draw();
+   alert('Excel uspešno uvezen.');
+ }
+ reader.readAsArrayBuffer(file);
+}
+
+function exportExcel(){
+let rows=db[current];
+let csv="Datum,Proizvod,Plan,Uradjeno,Status,Komentar\n";
+rows.forEach(r=>{
+csv+=`${r.datum||''},${r.proizvod||''},${r.plan||0},${r.done||0},${r.status||''},${r.komentar||''}\n`;
+});
+let blob=new Blob([csv],{type:'text/csv'});
+let a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download=current+".csv";
+a.click();
+}
+
+function importCSV(e){
+const file=e.target.files[0];
+if(!file) return;
+const reader=new FileReader();
+reader.onload=function(ev){
+let lines=ev.target.result.split(/\r?\n/);
+for(let i=1;i<lines.length;i++){
+let c=lines[i].split(",");
+if(c.length<3) continue;
+db[current].push({
+datum:c[0]||'',
+proizvod:c[1]||'',
+plan:c[2]||0,
+done:0,
+status:'Aktivan',
+komentar:''
+});
+}
+save(); draw();
+}
+reader.readAsText(file);
+}
+
+function draw(){
+if(document.getElementById('role') && document.getElementById('role').value==='Tim lider'){
+ document.getElementById('adminTools').style.display='none'; document.getElementById('excelAdminTools').style.display='none';
+}
+drawTabs();
+let role=document.getElementById('role').value;
+let rows=db[current];
+let done=0,plan=rows.length;
+let search=(document.getElementById('search')?.value||'').toLowerCase();
+let found=0;
+let firstHit=-1;
+
+let h='<table><tr><th>Datum</th><th>Proizvod</th><th>Plan</th><th>Urađeno</th><th>%</th><th>Status</th><th>Komentar</th></tr>';
+
+rows.forEach((r,i)=>{
+let p=Number(r.plan||0), d=Number(r.done||0);
+if(r.status==='Završen') done++;
+let pct=p?Math.round(d/p*100):0;
+
+let lock=role==='Tim lider'?'readonly':'';
+
+let rowClass='';
+if(search && (r.proizvod||'').toLowerCase().includes(search)){
+ rowClass='search-hit';
+ found++;
+ if(firstHit===-1) firstHit=i;
+}
+else if(r.status==='U obradi') rowClass='row-progress';
+else if(r.status==='Završen') rowClass='row-done';
+else if(r.status==='Ne isporučujemo') rowClass='row-stop';
+else if(r.status==='Mold') rowClass='row-mold';
+else rowClass='';
+h+=`<tr class="${rowClass}">
+<td>${isAdmin ? `<button onclick="delRow(${i})" style="margin-right:5px">🗑</button>` : ''}<input ${lock} value="${r.datum||''}" onchange="upd(${i},'datum',this.value)"></td>
+<td><input ${lock} value="${r.proizvod||''}" onchange="upd(${i},'proizvod',this.value)"></td>
+<td><input ${lock} type=number value="${p}" onchange="upd(${i},'plan',this.value)"></td>
+<td><input type=number value="${d}" onchange="upd(${i},'done',this.value)"></td>
+<td>${pct}%</td>
+<td><select onchange="upd(${i},'status',this.value)">
+<option value="" ${!r.status?'selected':''}>-- Status --</option>
+
+<option ${r.status=='U obradi'?'selected':''}>U obradi</option>
+<option ${r.status=='Završen'?'selected':''}>Završen</option>
+<option ${r.status=='Ne isporučujemo'?'selected':''}>Ne isporučujemo</option><option ${r.status=='Mold'?'selected':''}>Mold</option>
+</select></td>
+<td><input value="${r.komentar||''}" onchange="upd(${i},'komentar',this.value)"></td>
+</tr>`;
+});
+
+h+='</table><br>';
+if(isAdmin) h+='<button onclick="addRow()">✚ Novi red</button>';
+document.getElementById('grid').innerHTML=h;
+
+document.getElementById('k1').innerHTML='Plan: '+plan;
+document.getElementById('k2').innerHTML='Urađeno: '+done;
+document.getElementById('k3').innerHTML='Realizacija: '+(plan?Math.round(done/plan*100):0)+'%';
+document.getElementById('searchCount').innerHTML=search?('Pronađeno: '+found):'';
+setTimeout(()=>{
+ const hit=document.querySelector('.search-hit');
+ if(hit) hit.scrollIntoView({behavior:'smooth',block:'center'});
+},50);
+}
+
+setInterval(()=>{
+
+const now=new Date();
+document.getElementById('dateOnly').innerText='Utorak 9. jun 2026';
+document.getElementById('clock').innerText=now.toLocaleTimeString('sr-RS');
+const h=now.getHours();
+document.getElementById('shift').innerText=(h>=6 && h<14 ? 'I smena' : (h>=14 && h<22 ? 'II smena' : 'III smena'));
+
+},1000);
+
+draw();
+
+// Auto refresh every 30 minutes for TV display
+const refreshMin=parseInt(localStorage.getItem('refreshMin')||'30');
+if(refreshMin>0){setInterval(()=>location.reload(), refreshMin*60000);}
+</script>
+<div style='text-align:center;color:#6b7280;font-size:12px;margin-top:15px'>ERMAX Production Control • © 2026 Marko Mitić</div></body>
+</html>
+<!-- Professional Edition -->
+<!-- Dashboard table redesign applied -->
+<style>
+button{
+ display:inline-flex!important;
+ align-items:center!important;
+ gap:8px!important;
+ padding:12px 18px!important;
+ border-radius:18px!important;
+ background:linear-gradient(135deg,#ffffff,#eef5ff)!important;
+ box-shadow:0 8px 20px rgba(37,99,235,.10)!important;
+}
+button:hover{
+ transform:translateY(-3px)!important;
+}
+</style>
